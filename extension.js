@@ -1,16 +1,16 @@
 const { 
-  gi: { Gio, GLib },
-  misc: { extensionUtils },
-  ui: { main: { osdWindowManager: { _osdWindows: Osd } } } 
+  misc: { extensionUtils: ExUtils },
+  gi: { Gio: { Subprocess : { new: Polychromatic } }, GLib: { spawn_command_line_sync: run } },
+  ui: { main: { osdWindowManager: { _osdWindows: Osd } } },
 } = imports;
 
-const Me = extensionUtils.getCurrentExtension();
+const Me = ExUtils.getCurrentExtension();
 
 const createSliderNumberPatch = ({ _level: slider }) => {
   let lastEffect = null;
+  const _settings = ExUtils.getSettings();
   
-  const _settings = extensionUtils.getSettings();
-  const settings = () => ({
+  const config = () => ({
     enabled: _settings.get_boolean('keyboard-options-enabled'),
     polychromaticPath: _settings.get_string('polychromatic-path'),
     effects: {
@@ -25,41 +25,35 @@ const createSliderNumberPatch = ({ _level: slider }) => {
       defaultColor: _settings.get_string('default-color'),
     },
   });
+    
+  const getVolume = () => parseInt(run('pactl list sinks')[1].toString().match(/[0-9]{1,3}[%]/mid)[0])/100;
   
-  
-  const getCurrentVolume = () => parseInt(GLib.spawn_command_line_sync('pactl list sinks')[1].toString().match(/[0-9]{1,3}[%]/mid)[0])/100;
-  
-  const defautlKeyboardColor = () => setKeyboardEffect(settings().effects.defaultColor);
-  
-  const changeKeyboardColor = (v, p) => {
-    const { enabled, effects } = settings();
-    if (!enabled) return defautlKeyboardColor();
-    if (lastEffect !== effects[p][!!v]) setKeyboardEffect(effects[p][!!v]);
-  }
+  const callEffect = (v, p, { enabled:on, effects:e } = config()) => on ? setEffect(e[p][!!v]) : setEffect(e.defaultColor);
+    
+  const setEffect = (effect) => {
+    if (lastEffect !== effect) {
+      Polychromatic([config().polychromaticPath, '-e', effect], null);
+      lastEffect = effect?.replace('static-', '') || effect;
+    }
+  };
 
-  const setKeyboardEffect = (effect) => {
-    Gio.Subprocess.new([settings().polychromaticPath, '-e', effect], null);
-    lastEffect = effect?.replace('static-', '') || effect;
-  }
-
-  let settingsId = _settings.connect('changed::keyboard-options-enabled', () => changeKeyboardColor(getCurrentVolume(), 'static'));
-  let valueChangedId = slider.connect('notify::value', ({ _value }) => changeKeyboardColor(_value, 'dinamic'));
+  let settingsId = _settings.connect('changed::keyboard-options-enabled', () => callEffect(getVolume(), 'static'));
+  let valueChangedId = slider.connect('notify::value', ({ _value }) => callEffect(_value, 'dinamic'));
   
-  changeKeyboardColor(getCurrentVolume(), 'static');
+  callEffect(getVolume(), 'static');
 
   return () => {
-    defautlKeyboardColor()
+    callEffect()
     slider.disconnect(valueChangedId);
     _settings.disconnect(settingsId);
   }
 }
 
 function init() {
-  extensionUtils.initTranslations();
+  ExUtils.initTranslations();
   let patches = [];
-
   return {
     enable:() => patches = Osd.map(createSliderNumberPatch),
-    disable:() => { patches.forEach((unpatch) => unpatch()); patches = [] },
+    disable:() => patches = patches.forEach(run) || [],
   };
 };
