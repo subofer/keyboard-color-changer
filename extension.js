@@ -15,44 +15,40 @@ const createSliderNumberPatch = ({ _level: slider }) => {
     polychromaticPath: _settings.get_string('polychromatic-path'),
     effects: {
       dinamic: {
-        mute: _settings.get_string('dinamic-mute'),
-        unMute: _settings.get_string('dinamic-unmute'),
+        false: _settings.get_string('dinamic-mute'),
+        true: _settings.get_string('dinamic-unmute'),
       },
       static: {
-        mute: _settings.get_string('static-mute'),
-        unMute: _settings.get_string('static-unmute'),
+        false: _settings.get_string('static-mute'),
+        true: _settings.get_string('static-unmute'),
       },
       defaultColor: _settings.get_string('default-color'),
     },
   });
   
-  const getCurrentVolume = () => {
-    const match = GLib.spawn_command_line_sync('pactl list sinks')[1].toString().match(/[0-9]{1,3}[%]/mid)[0];
-     return match ? parseInt(match)/100 : null;
-  };
   
-  const changeKeyboardColor = (newValue, pattern) => {
-    const { enabled, defaultColor, effects: { [pattern]: { mute, unMute } } } = settings();
-    if (!enabled) return setKeyboardEffect(defaultColor);
-    
-    const effect = newValue ? unMute : mute;
-    if (lastEffect !== effect) setKeyboardEffect(effect);
+  const getCurrentVolume = () => parseInt(GLib.spawn_command_line_sync('pactl list sinks')[1].toString().match(/[0-9]{1,3}[%]/mid)[0])/100;
+  
+  const defautlKeyboardColor = () => setKeyboardEffect(settings().effects.defaultColor);
+  
+  const changeKeyboardColor = (v, p) => {
+    const { enabled, effects } = settings();
+    if (!enabled) return defautlKeyboardColor();
+    if (lastEffect !== effects[p][!!v]) setKeyboardEffect(effects[p][!!v]);
   }
 
-  const setInitialKeyboardColor = () => changeKeyboardColor(getCurrentVolume(), 'static');
-  
   const setKeyboardEffect = (effect) => {
     Gio.Subprocess.new([settings().polychromaticPath, '-e', effect], null);
     lastEffect = effect?.replace('static-', '') || effect;
   }
 
-  let settingsId = _settings.connect('changed::keyboard-options-enabled', setInitialKeyboardColor);
-  let valueChangedId = slider.connect('notify::value', ({ _value:v }) => changeKeyboardColor(v, 'dinamic'));
+  let settingsId = _settings.connect('changed::keyboard-options-enabled', () => changeKeyboardColor(getCurrentVolume(), 'static'));
+  let valueChangedId = slider.connect('notify::value', ({ _value }) => changeKeyboardColor(_value, 'dinamic'));
   
-  setInitialKeyboardColor();
+  changeKeyboardColor(getCurrentVolume(), 'static');
 
   return () => {
-    setKeyboardEffect(settings().defaultColor);
+    defautlKeyboardColor()
     slider.disconnect(valueChangedId);
     _settings.disconnect(settingsId);
   }
@@ -64,6 +60,6 @@ function init() {
 
   return {
     enable:() => patches = Osd.map(createSliderNumberPatch),
-    disable:() => patches = !!patches.forEach(w => w()) || [],
+    disable:() => { patches.forEach((unpatch) => unpatch()); patches = [] },
   };
 };
