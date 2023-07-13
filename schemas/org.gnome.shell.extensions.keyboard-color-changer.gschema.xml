@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2023 Deminder <tremminder@gmail.com>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+<schemalist gettext-domain="keyboard-color-changer">
+  <schema path="/org/gnome/shell/extensions/keyboard-color-changer/" id="org.gnome.shell.extensions.keyboard-color-changer">
+    <key type="s" name="polychromatic-path">
+      <default>"/usr/bin/polychromatic-cli"</default>
+      <summary>Ruta al manejador de teclado</summary>
+    </key>
+    
+    <key type="s" name="perfiles-array">
+      <default>"mute,unMute"</default>
+      <summary>Nombre de los perfiles</summary>
+    </key>
+    <key type="s" name="dinamic-mute">
+      <default>"mute"</default>
+      <summary>Efecto para Mute</summary>
+    </key>
+    <key type="s" name="dinamic-unmute">
+      <default>"unMute"</default>
+      <summary>Efecto para unMute</summary>
+    </key>
+    <key type="s" name="static-mute">
+      <default>"staticMute"</default>
+      <summary>Estatico para Mute</summary>
+    </key>
+    <key type="s" name="static-unmute">
+      <default>"staticUnMute"</default>
+      <summary>Estatico para unMute</summary>
+    </key>
+    
+    <key type="s" name="default-color">
+      <default>"white"</default>
+      <summary>Perfil por defecto</summary>
+    </key>
+
+    <key name="keyboard-options-enabled" type="b">
+      <default>true</default>
+      <summary>Enable Text Options</summary>
+      <description>Enable or disable text options</description>
+    </key>
+  </schema>
+</schemalist>
