@@ -1,7 +1,7 @@
 # Keyboard Color Changer Extension
 
 ## Descripción
-La extensión Keyboard Color Changer es una extensión de GNOME Shell que permite cambiar el color del teclado en función del volumen del sistema. Proporciona una integración sencilla con la herramienta Polychromatic para ajustar automáticamente el color del teclado según el volumen de salida del sistema.
+La extensión Keyboard Color Changer es una extensión de GNOME Shell que permite cambiar el color del teclado (razer) en función del volumen del sistema. Proporciona una integración sencilla con la herramienta Polychromatic para ajustar automáticamente el color del teclado según el volumen de salida del sistema.
 
 ## Características
 - Cambia el color del teclado en función del volumen del sistema.
